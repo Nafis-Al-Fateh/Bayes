@@ -1,7 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.title("🧪 Simple Test Accuracy Checker")
+st.title("🧪 Simple Test Accuracy Checker using Bayesian Theorem")
 
 st.markdown("""
 This tool helps you understand:
