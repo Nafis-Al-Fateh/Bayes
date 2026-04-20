@@ -1,64 +1,105 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.title("🧪 Diagnostic Test Accuracy (Bayes Theorem)")
+st.title("🧪 Simple Test Accuracy Checker")
 
-st.markdown("Calculate the probability of disease given a positive test result.")
+st.markdown("""
+This tool helps you understand:
 
-# --- Inputs for Test 1 ---
-st.header("Test 1 Inputs")
+👉 If your test result is **positive**, what is the **real chance you are actually sick?**
 
-prevalence = st.slider("Disease Prevalence (%)", 0.0, 100.0, 10.0) / 100
-sensitivity = st.slider("Sensitivity (%)", 0.0, 100.0, 90.0) / 100
-specificity = st.slider("Specificity (%)", 0.0, 100.0, 90.0) / 100
+No math knowledge needed 🙂
+""")
 
-# --- Bayes Calculation Function ---
-def bayes(prevalence, sensitivity, specificity):
-    p_d = prevalence
-    p_not_d = 1 - prevalence
+# --- Inputs ---
+st.header("📌 Step 1: Basic Information")
 
-    p_pos_given_d = sensitivity
-    p_pos_given_not_d = 1 - specificity
+prevalence = st.slider(
+    "How common is the disease in the population? (%)",
+    0.0, 100.0, 10.0
+) / 100
 
-    numerator = p_pos_given_d * p_d
-    denominator = numerator + (p_pos_given_not_d * p_not_d)
+sensitivity = st.slider(
+    "If someone IS sick, how often does the test correctly detect it? (%)",
+    0.0, 100.0, 90.0
+) / 100
 
-    return numerator / denominator if denominator != 0 else 0
+specificity = st.slider(
+    "If someone is NOT sick, how often does the test correctly say negative? (%)",
+    0.0, 100.0, 90.0
+) / 100
 
-# --- Calculate Test 1 ---
-posterior1 = bayes(prevalence, sensitivity, specificity)
+# --- Bayes Calculation ---
+def calculate_real_chance(prevalence, sensitivity, specificity):
+    sick = prevalence
+    healthy = 1 - prevalence
 
-st.subheader(f"✅ Test 1 Accuracy (P(Disease | Positive)) = {posterior1:.4f}")
+    positive_if_sick = sensitivity
+    positive_if_healthy = 1 - specificity
 
-# --- Option for Second Test ---
-st.header("Optional: Add Second Test")
+    top = positive_if_sick * sick
+    bottom = top + (positive_if_healthy * healthy)
 
-use_second_test = st.checkbox("Run Second Test")
+    return top / bottom if bottom != 0 else 0
 
-posterior2 = None
+# --- Result for Test 1 ---
+result1 = calculate_real_chance(prevalence, sensitivity, specificity)
 
-if use_second_test:
-    sensitivity2 = st.slider("Second Test Sensitivity (%)", 0.0, 100.0, 90.0) / 100
-    specificity2 = st.slider("Second Test Specificity (%)", 0.0, 100.0, 90.0) / 100
+st.header("📊 Result")
 
-    # Use posterior from first test as new prior
-    posterior2 = bayes(posterior1, sensitivity2, specificity2)
+st.success(
+    f"If your test is POSITIVE 👉 There is a **{result1*100:.2f}% chance you are actually sick**"
+)
 
-    st.subheader(f"🔁 Test 2 Updated Accuracy = {posterior2:.4f}")
+# --- Second Test Option ---
+st.header("🔁 Want to double-check with a second test?")
 
-# --- Plotting ---
-st.header("📊 Accuracy Comparison")
+use_second = st.checkbox("Yes, run a second test")
 
-labels = ["Test 1"]
-values = [posterior1]
+result2 = None
 
-if posterior2 is not None:
-    labels.append("Test 2")
-    values.append(posterior2)
+if use_second:
+    sensitivity2 = st.slider(
+        "Second test: If sick, how often detected? (%)",
+        0.0, 100.0, 90.0
+    ) / 100
+
+    specificity2 = st.slider(
+        "Second test: If healthy, how often correctly negative? (%)",
+        0.0, 100.0, 90.0
+    ) / 100
+
+    result2 = calculate_real_chance(result1, sensitivity2, specificity2)
+
+    st.success(
+        f"After SECOND positive test 👉 Chance you are actually sick = **{result2*100:.2f}%**"
+    )
+
+# --- Graph ---
+st.header("📈 Visual Comparison")
+
+labels = ["After 1 Test"]
+values = [result1]
+
+if result2 is not None:
+    labels.append("After 2 Tests")
+    values.append(result2)
 
 fig, ax = plt.subplots()
 ax.bar(labels, values)
-ax.set_ylabel("Probability")
-ax.set_title("Accuracy Comparison")
+ax.set_ylabel("Chance of actually being sick")
+ax.set_title("How certainty increases with testing")
 
 st.pyplot(fig)
+
+# --- Extra Explanation ---
+st.markdown("""
+---
+### 🧠 Simple Explanation
+
+- Even a "good" test can give false positives  
+- If a disease is rare, many positive results may still be wrong  
+- Doing a second test usually increases confidence  
+
+This tool helps you see that clearly 👍
+""")
